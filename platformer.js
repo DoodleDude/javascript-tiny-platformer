@@ -85,7 +85,19 @@
     switch(key) {
       case KEY.LEFT:  player.left  = down; ev.preventDefault(); return false;
       case KEY.RIGHT: player.right = down; ev.preventDefault(); return false;
-      case KEY.UP: player.jump  = down; ev.preventDefault(); return false;
+      case KEY.UP: 
+        player.jump = down;
+        if (down && !player.didJump) {
+          player.didJump = true;
+        } else if(!down && player.didJump) {
+          player.jumpDone = true;
+        } else if(down && player.didJump && player.jumpDone) {
+          player.jumpToggled = true;
+          player.didJump = false;
+          player.jumpDone = false;
+        }
+        ev.preventDefault(); 
+        return false;
     }
   }
   
@@ -142,6 +154,20 @@
     t.collected = true;
   }
 
+  function initDoubleJump(entity) {
+    if (entity.player && !entity.jumped) {
+      entity.jumped = true;
+      entity.jumpedy = entity.y;
+    }
+  }
+
+  function doubleJump(entity) {
+    if (entity.player && entity.jumped /* && entity.jumpedy > entity.y + 150 */ && entity.jumpToggled) {
+      entity.ddy = entity.ddy - entity.impulse / 1.25;
+      entity.jumped = false;
+    }
+  }
+
   function updateEntity(entity, dt) {
     var wasleft    = entity.dx  < 0,
         wasright   = entity.dx  > 0,
@@ -165,7 +191,10 @@
     if (entity.jump && !entity.jumping && !falling) {
       entity.ddy = entity.ddy - entity.impulse; // an instant big force impulse
       entity.jumping = true;
+      initDoubleJump(entity);
     }
+
+    doubleJump(entity);
   
     entity.x  = entity.x  + (dt * entity.dx);
     entity.y  = entity.y  + (dt * entity.dy);
@@ -356,6 +385,7 @@
   var counter = 0, dt = 0, now,
       last = timestamp(),
       fpsmeter = new FPSMeter({ decimals: 0, graph: true, theme: 'dark', left: '5px' });
+      fpsmeter.ticks = 0;
   
   function frame() {
     fpsmeter.tickStart();
@@ -369,6 +399,7 @@
     last = now;
     counter++;
     fpsmeter.tick();
+    fpsmeter.ticks++;
     requestAnimationFrame(frame, canvas);
   }
   
