@@ -58,7 +58,7 @@
       IMPULSE  = 1500,    // default player jump impulse
       COLOR    = { BLACK: '#000000', YELLOW: '#ECD078', BRICK: '#D95B43', PINK: '#C02942', PURPLE: '#542437', GREY: '#333', SLATE: '#53777A', GOLD: 'gold' },
       COLORS   = [ COLOR.YELLOW, COLOR.BRICK, COLOR.PINK, COLOR.PURPLE, COLOR.GREY ],
-      KEY      = { SPACE: 32, LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40 };
+      KEY      = { LEFT: 'a', UP: 'w', RIGHT: 'd', DOWN: 's' };
       
   var fps      = 60,
       step     = 1/fps,
@@ -85,7 +85,7 @@
     switch(key) {
       case KEY.LEFT:  player.left  = down; ev.preventDefault(); return false;
       case KEY.RIGHT: player.right = down; ev.preventDefault(); return false;
-      case KEY.SPACE: player.jump  = down; ev.preventDefault(); return false;
+      case KEY.UP: player.jump  = down; ev.preventDefault(); return false;
     }
   }
   
@@ -372,8 +372,8 @@
     requestAnimationFrame(frame, canvas);
   }
   
-  document.addEventListener('keydown', function(ev) { return onkey(ev, ev.keyCode, true);  }, false);
-  document.addEventListener('keyup',   function(ev) { return onkey(ev, ev.keyCode, false); }, false);
+  document.addEventListener('keydown', function(ev) { return onkey(ev, ev.key, true);  }, false);
+  document.addEventListener('keyup',   function(ev) { return onkey(ev, ev.key, false); }, false);
 
   get("level.json", function(req) {
     setup(JSON.parse(req.responseText));
