@@ -66,10 +66,20 @@
       ctx      = canvas.getContext('2d'),
       width    = canvas.width  = MAP.tw * TILE,
       height   = canvas.height = MAP.th * TILE,
-      player   = {},
+      player   = {
+        collected: 0,
+        killed: 0,
+      },
       monsters = [],
       treasure = [],
-      cells    = [];
+      cells    = [],
+      game_process = true,
+      game_status  = '',
+      lives_text        = document.querySelector("#lives span"),
+      lives = 3,
+      timer        = document.querySelector("#timer"),
+      timer_start  = timestamp(),
+      total_score  = 180000
   
   var t2p      = function(t)     { return t*TILE;                  },
       p2t      = function(p)     { return Math.floor(p/TILE);      },
@@ -103,6 +113,10 @@
     var n, max;
     for(n = 0, max = monsters.length ; n < max ; n++)
       updateMonster(monsters[n], dt);
+
+    if (player.killed == monsters.length) {
+      game_process = false
+    }
   }
 
   function updateMonster(monster, dt) {
@@ -113,6 +127,10 @@
           killMonster(monster);
         else
           killPlayer(player);
+          lives -= 1
+          if (lives == 0) {
+            game_process = false
+          }
       }
     }
   }
@@ -123,6 +141,10 @@
       t = treasure[n];
       if (!t.collected && overlap(player.x, player.y, TILE, TILE, t.x, t.y, TILE, TILE))
         collectTreasure(t);
+      
+      if (player.collected == treasure.length) {
+        game_process = false
+      }
     }
   }
 
@@ -236,6 +258,20 @@
     entity.falling = ! (celldown || (nx && celldiag));
   
   }
+
+  function count_score() {
+    if (lives == 0) {
+      total_score = 0;
+      game_status = "GAME OVER!"
+    } else {
+      total_score = total_score - Math.round((now - timer_start)) + (player.killed * 75) + (player.collected * 50)
+      game_status = `
+      Total score: ${total_score}<br>
+      Monsters killed: ${player.killed}<br>
+      Treasure collected: ${player.collected}`
+    }
+  }
+
 
   //-------------------------------------------------------------------------
   // RENDERING
@@ -357,6 +393,15 @@
       last = timestamp(),
       fpsmeter = new FPSMeter({ decimals: 0, graph: true, theme: 'dark', left: '5px' });
   
+  function new_game() {
+    get("level.json", function(req) {
+      setup(JSON.parse(req.responseText));
+      timer_start  = timestamp()
+      frame();
+    });
+  }
+
+
   function frame() {
     fpsmeter.tickStart();
     now = timestamp();
@@ -369,16 +414,50 @@
     last = now;
     counter++;
     fpsmeter.tick();
-    requestAnimationFrame(frame, canvas);
+
+    timer.innerHTML = Math.round((now - timer_start) / 1000)
+    lives_text.innerHTML = lives
+
+    let requestID = requestAnimationFrame(frame, canvas)
+
+    if (Math.round((now - timer_start) / 1000) == 180) {
+      game_process = false
+    }
+
+    if (!game_process) {
+      
+      let gameover      = document.querySelector("#gameover"),
+          gameover_text = document.querySelector("#gameover p")
+          replay_btn    = document.querySelector("#gameover button")
+      
+      count_score();
+      player = {}
+      treasure = []
+      monsters = []
+      cells    = []
+      lives    = 3
+      
+      now = timestamp()
+      gameover.classList.add("finish")
+      gameover_text.innerHTML = game_status
+      
+      cancelAnimationFrame(requestID)
+      
+      replay_btn.onclick = function () {
+        game_process = true
+        game_status = ''
+
+        gameover.classList.remove("finish")
+        gameover_text.innerHTML = ''
+        new_game();
+      }
+    }
   }
   
   document.addEventListener('keydown', function(ev) { return onkey(ev, ev.key, true);  }, false);
   document.addEventListener('keyup',   function(ev) { return onkey(ev, ev.key, false); }, false);
 
-  get("level.json", function(req) {
-    setup(JSON.parse(req.responseText));
-    frame();
-  });
 
+  new_game();
 })();
 
