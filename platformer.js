@@ -58,7 +58,7 @@
       IMPULSE  = 1500,    // default player jump impulse
       COLOR    = { BLACK: '#000000', YELLOW: '#ECD078', BRICK: '#D95B43', PINK: '#C02942', PURPLE: '#542437', GREY: '#333', SLATE: '#53777A', GOLD: 'gold' },
       COLORS   = [ COLOR.YELLOW, COLOR.BRICK, COLOR.PINK, COLOR.PURPLE, COLOR.GREY ],
-      KEY      = { LEFT: 'a', UP: 'w', RIGHT: 'd', DOWN: 's' };
+      KEY      = { LEFT: 'KeyA', UP: 'KeyW', RIGHT: 'KeyD', DOWN: 'KeyS' };
       
   var fps      = 60,
       step     = 1/fps,
@@ -95,19 +95,7 @@
     switch(key) {
       case KEY.LEFT:  player.left  = down; ev.preventDefault(); return false;
       case KEY.RIGHT: player.right = down; ev.preventDefault(); return false;
-      case KEY.UP: 
-        player.jump = down;
-        if (down && !player.didJump) {
-          player.didJump = true;
-        } else if(!down && player.didJump) {
-          player.jumpDone = true;
-        } else if(down && player.didJump && player.jumpDone) {
-          player.jumpToggled = true;
-          player.didJump = false;
-          player.jumpDone = false;
-        }
-        ev.preventDefault(); 
-        return false;
+      case KEY.SPACE: player.jump  = down; ev.preventDefault(); return false;
     }
   }
   
@@ -176,20 +164,6 @@
     t.collected = true;
   }
 
-  function initDoubleJump(entity) {
-    if (entity.player && !entity.jumped) {
-      entity.jumped = true;
-      entity.jumpedy = entity.y;
-    }
-  }
-
-  function doubleJump(entity) {
-    if (entity.player && entity.jumped /* && entity.jumpedy > entity.y + 150 */ && entity.jumpToggled) {
-      entity.ddy = entity.ddy - entity.impulse / 1.25;
-      entity.jumped = false;
-    }
-  }
-
   function updateEntity(entity, dt) {
     var wasleft    = entity.dx  < 0,
         wasright   = entity.dx  > 0,
@@ -213,11 +187,8 @@
     if (entity.jump && !entity.jumping && !falling) {
       entity.ddy = entity.ddy - entity.impulse; // an instant big force impulse
       entity.jumping = true;
-      initDoubleJump(entity);
     }
 
-    doubleJump(entity);
-  
     entity.x  = entity.x  + (dt * entity.dx);
     entity.y  = entity.y  + (dt * entity.dy);
     entity.dx = bound(entity.dx + (dt * entity.ddx), -entity.maxdx, entity.maxdx);
@@ -444,7 +415,6 @@
     last = now;
     counter++;
     fpsmeter.tick();
-    fpsmeter.ticks++;
 
     timer.innerHTML = Math.round((now - timer_start) / 1000)
     lives_text.innerHTML = lives
@@ -485,8 +455,8 @@
     }
   }
   
-  document.addEventListener('keydown', function(ev) { return onkey(ev, ev.key, true);  }, false);
-  document.addEventListener('keyup',   function(ev) { return onkey(ev, ev.key, false); }, false);
+  document.addEventListener('keydown', function(ev) { return onkey(ev, ev.code, true);  }, false);
+  document.addEventListener('keyup',   function(ev) { return onkey(ev, ev.code, false); }, false);
 
 
   new_game();
